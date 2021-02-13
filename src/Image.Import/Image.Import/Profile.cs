@@ -11,7 +11,8 @@ namespace Image.Import
         }
 
         #region Name
-        private string _name;
+        private string _name;        
+
         public string Name
         {
             get => _name;
@@ -24,8 +25,10 @@ namespace Image.Import
         }
         #endregion
 
-        public string TargetPictures { get; set; }
-        public string TargetVideos { get; set; }
+        public string Target { get; set; }
+
+        public string PicturesExpression { get; set; }
+        public string VideosExpression { get; set; }
         public bool Overwrite { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;

@@ -172,6 +172,7 @@ namespace Image.Import
             this.comboBoxProfiles.Size = new System.Drawing.Size(526, 28);
             this.comboBoxProfiles.Sorted = true;
             this.comboBoxProfiles.TabIndex = 8;
+            this.comboBoxProfiles.SelectedValueChanged += new System.EventHandler(this.comboBoxProfiles_SelectedValueChanged);
             // 
             // buttonEdit
             // 

@@ -25,6 +25,7 @@ namespace Image.Import
         private void ButtonOkClick(object sender, EventArgs e)
         {
             dataGridView.CancelEdit();
+            ProfileContainer.Save();
         }
     }
 }

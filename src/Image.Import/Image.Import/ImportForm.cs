@@ -4,9 +4,12 @@ using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Media.Imaging;
+using Toolbox;
 
 namespace Image.Import
 {
@@ -18,12 +21,14 @@ namespace Image.Import
 
             Files.ListChanged += FilesListChanged;
 
-            FileHandlers = new Dictionary<string, Action<FileInfo>>(StringComparer.InvariantCultureIgnoreCase)
+            FileHandlers = new Dictionary<string, Func<FileInfo, bool>>(StringComparer.InvariantCultureIgnoreCase)
             {
                 { ".jpg", ImportPicture },
                 { ".mp4", ImportVideo },
             };
         }
+
+        public ImportOptions Options { get; set; }
 
         private void FilesListChanged(object sender, ListChangedEventArgs e)
         {
@@ -31,7 +36,7 @@ namespace Image.Import
         }
 
         public BindingList<FileInfo> Files { get; } = new BindingList<FileInfo>();
-        public Dictionary<string, Action<FileInfo>> FileHandlers { get; } 
+        public Dictionary<string, Func<FileInfo, bool>> FileHandlers { get; } 
         
         
         private void ButtonSelectClick(object sender, EventArgs e)
@@ -108,14 +113,54 @@ namespace Image.Import
             }
         }
 
-        private void ImportPicture(FileInfo file)
+        private static Regex PatternReplacments { get; } = new Regex(@"\$\{(?<name>\w+)(:(?<format>[^}]+))?\}", RegexOptions.Compiled);
+
+        private bool ImportPicture(FileInfo file)
         {
-            Thread.Sleep(150);
+            var metadata = new Metadata(file);
+            var filename = Path.Combine(Profile.Target, PatternReplacments.Replace(Profile.PicturesExpression, m => ReplacePicturePatterns(m, file, metadata)));
+            var directory = Path.GetDirectoryName(filename);
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            if (Profile.Overwrite || !File.Exists(filename))
+            {
+                file.CopyTo(filename, Profile.Overwrite);
+                return true;
+            }
+            return false;            
         }
 
-        private void ImportVideo(FileInfo file)
+        private string ReplacePicturePatterns(Match match, FileInfo file, Metadata metadata)
         {
+            var name = match.Groups["name"].Value;
 
+            switch (name.ToLower())
+            {
+                case "taken":
+                    {
+                        var format = match.Groups["format"].Value ?? "yyyy-MM-dd-HH-mm-ss";
+                        return metadata.DateTaken.ToString(format);
+                    }
+                case "filedate":
+                    {
+                        var format = match.Groups["format"].Value ?? "yyyy-MM-dd-HH-mm-ss";
+                        return file.LastWriteTime.ToString(format);
+                    }
+                case "filename":
+                    {
+                        return file.Name;
+                    }
+                default:
+                    {
+                        return $"Unknown-{name}";
+                    }
+            }
+        }
+
+        private bool ImportVideo(FileInfo file)
+        {
+            throw new NotImplementedException(file.FullName);
         }
 
         private void TextBoxSourceTextChanged(object sender, EventArgs e)
@@ -147,16 +192,39 @@ namespace Image.Import
 
                 buttonImport.Text = "&Abort";
 
+                textBoxProtocol.Text = "";
+                AddProtocol($"import from {textBoxSource.Text}");
+
                 Task.Run(() => Import(), TokenSource.Token)
                     .ContinueWith(CompleteImport);
             }
         }
 
+        public int Copied { get; private set; }
+        public int Skipped { get; private set; }
+        public int Failed { get; private set; }
+
         private void Import()
         {
+            AddProtocol($"profile {Profile.Name}");
+
+            Copied = Skipped = Failed = 0;
+
             foreach (var file in Files)
             {
-                FileHandlers[file.Extension](file);
+                try
+                {
+                    if (FileHandlers[file.Extension](file))
+                        Copied++;
+                    else
+                        Skipped++;
+                }
+                catch (Exception exception)
+                {
+                    AddProtocol($"failed - {file.FullName}");
+                    AddProtocol($"       {exception.Message}");
+                    Failed++;
+                }
                 Invoke((MethodInvoker)delegate
                 {
                     progressBar.Value++;
@@ -178,13 +246,31 @@ namespace Image.Import
                 comboBoxProfiles.Enabled =
                 buttonImport.Enabled = true;
 
+                progressBar.Visible = false;
+
                 buttonImport.Text = "&Import";
+
+                var results = new List<string>();
+                if (Copied > 0)
+                    results.Add($"{Copied:#,##0} copied");
+                if (Skipped > 0)
+                    results.Add($"{Skipped:#,##0} skipped");
+                if (Failed > 0)
+                    results.Add($"{Failed:#,##0} failed");
+
+                var result = string.Join(", ", results);
+                if (result.NotEmpty())
+                    AddProtocol($"result - {result}");
 
                 if (task.IsCanceled)
                     AddProtocol("import aborted.");
                 else if (task.IsFaulted)
                 {
                     AddProtocol($"import failed - {task.Exception?.Message}");
+                }
+                else
+                {
+                    AddProtocol($"import completed");
                 }
             });
         }
@@ -202,6 +288,8 @@ namespace Image.Import
             
             comboBoxProfiles.DataSource = ProfileContainer.Profiles;
             comboBoxProfiles.DisplayMember = "Name";
+
+            textBoxSource.Text = Options.Source;
         }
 
         private void ButtonEditClick(object sender, EventArgs e)
@@ -215,6 +303,13 @@ namespace Image.Import
                 comboBoxProfiles.DisplayMember = "Name";
                 comboBoxProfiles.SelectedItem = ProfileContainer.Profiles.FirstOrDefault(p => p.Name == selected);
             }
+        }
+
+        public Profile Profile { get; set; }
+
+        private void comboBoxProfiles_SelectedValueChanged(object sender, EventArgs e)
+        {
+            Profile = (Profile)comboBoxProfiles.SelectedValue;
         }
     }
 }

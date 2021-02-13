@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Image.Import": {
+      "commandName": "Project",
+      "commandLineArgs": "D:\\Temp\\Pics"
+    }
+  }
+}

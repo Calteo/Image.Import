@@ -4,9 +4,11 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Toolbox.CommandLine" Version="1.0.31" />
     <PackageReference Include="Toolbox.Core" Version="0.2.6" />
     <PackageReference Include="Toolbox.Xml.Serialization" Version="1.0.63" />
   </ItemGroup>
