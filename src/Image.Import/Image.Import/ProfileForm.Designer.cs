@@ -29,29 +29,27 @@ namespace Image.Import
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ProfileForm));
             this.dataGridView = new System.Windows.Forms.DataGridView();
+            this.ColumnName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ColumnImages = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ColumnVideos = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.tableLayoutPanel = new System.Windows.Forms.TableLayoutPanel();
             this.buttonOk = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
-            this.ColumnName = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ColumnTarget = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ColumnPictures = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ColumnVideos = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ColumnOverwrite = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
             this.tableLayoutPanel.SuspendLayout();
             this.SuspendLayout();
             // 
             // dataGridView
             // 
+            this.dataGridView.AllowUserToResizeRows = false;
             this.dataGridView.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
             this.dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.ColumnName,
-            this.ColumnTarget,
-            this.ColumnPictures,
-            this.ColumnVideos,
-            this.ColumnOverwrite});
+            this.ColumnImages,
+            this.ColumnVideos});
             this.tableLayoutPanel.SetColumnSpan(this.dataGridView, 3);
             this.dataGridView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dataGridView.Location = new System.Drawing.Point(3, 4);
@@ -60,6 +58,27 @@ namespace Image.Import
             this.dataGridView.RowTemplate.Height = 25;
             this.dataGridView.Size = new System.Drawing.Size(794, 408);
             this.dataGridView.TabIndex = 0;
+            // 
+            // ColumnName
+            // 
+            this.ColumnName.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.ColumnName.DataPropertyName = "Name";
+            this.ColumnName.HeaderText = "Name";
+            this.ColumnName.Name = "ColumnName";
+            // 
+            // ColumnImages
+            // 
+            this.ColumnImages.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.ColumnImages.DataPropertyName = "ImageExpression";
+            this.ColumnImages.HeaderText = "Images";
+            this.ColumnImages.Name = "ColumnImages";
+            // 
+            // ColumnVideos
+            // 
+            this.ColumnVideos.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.ColumnVideos.DataPropertyName = "VideoExpression";
+            this.ColumnVideos.HeaderText = "Videos";
+            this.ColumnVideos.Name = "ColumnVideos";
             // 
             // tableLayoutPanel
             // 
@@ -102,43 +121,6 @@ namespace Image.Import
             this.buttonCancel.Text = "&Cancel";
             this.buttonCancel.UseVisualStyleBackColor = true;
             // 
-            // ColumnName
-            // 
-            this.ColumnName.DataPropertyName = "Name";
-            this.ColumnName.HeaderText = "Name";
-            this.ColumnName.Name = "ColumnName";
-            this.ColumnName.Width = 74;
-            // 
-            // ColumnTarget
-            // 
-            this.ColumnTarget.DataPropertyName = "Target";
-            this.ColumnTarget.HeaderText = "Target";
-            this.ColumnTarget.Name = "ColumnTarget";
-            this.ColumnTarget.Width = 75;
-            // 
-            // ColumnPictures
-            // 
-            this.ColumnPictures.DataPropertyName = "PicturesExpression";
-            this.ColumnPictures.HeaderText = "Pictures";
-            this.ColumnPictures.Name = "ColumnPictures";
-            this.ColumnPictures.Width = 85;
-            // 
-            // ColumnVideos
-            // 
-            this.ColumnVideos.DataPropertyName = "VideoExpression";
-            this.ColumnVideos.HeaderText = "Videos";
-            this.ColumnVideos.Name = "ColumnVideos";
-            this.ColumnVideos.Width = 79;
-            // 
-            // ColumnOverwrite
-            // 
-            this.ColumnOverwrite.DataPropertyName = "Overwrite";
-            this.ColumnOverwrite.FalseValue = "false";
-            this.ColumnOverwrite.HeaderText = "Overwrite";
-            this.ColumnOverwrite.Name = "ColumnOverwrite";
-            this.ColumnOverwrite.TrueValue = "true";
-            this.ColumnOverwrite.Width = 79;
-            // 
             // ProfileForm
             // 
             this.AcceptButton = this.buttonOk;
@@ -148,6 +130,7 @@ namespace Image.Import
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.tableLayoutPanel);
             this.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ProfileForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Profiles";
@@ -165,9 +148,7 @@ namespace Image.Import
         private System.Windows.Forms.Button buttonOk;
         private System.Windows.Forms.Button buttonCancel;
         private System.Windows.Forms.DataGridViewTextBoxColumn ColumnName;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnTarget;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnPictures;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnImages;
         private System.Windows.Forms.DataGridViewTextBoxColumn ColumnVideos;
-        private System.Windows.Forms.DataGridViewCheckBoxColumn ColumnOverwrite;
     }
 }

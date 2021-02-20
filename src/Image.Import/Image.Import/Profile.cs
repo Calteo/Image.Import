@@ -25,11 +25,8 @@ namespace Image.Import
         }
         #endregion
 
-        public string Target { get; set; }
-
-        public string PicturesExpression { get; set; }
-        public string VideosExpression { get; set; }
-        public bool Overwrite { get; set; }
+        public string ImageExpression { get; set; }
+        public string VideoExpression { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

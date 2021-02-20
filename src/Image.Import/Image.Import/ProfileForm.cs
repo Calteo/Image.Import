@@ -11,13 +11,15 @@ namespace Image.Import
         public ProfileForm()
         {
             InitializeComponent();
+
+            dataGridView.AutoGenerateColumns = false;
         }
         
         public ProfileContainer ProfileContainer { get; set; }
 
         private void ProfileFormLoad(object sender, EventArgs e)
         {
-            dataGridView.AutoGenerateColumns = false;
+            
             ProfileContainer.Profiles = new BindingList<Profile>(ProfileContainer.Profiles.OrderBy(p => p.Name).ToList());
             dataGridView.DataSource = ProfileContainer.Profiles;
         }

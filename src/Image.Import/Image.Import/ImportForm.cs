@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -8,8 +9,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Media.Imaging;
 using Toolbox;
+using Toolbox.Xml.Serialization;
 
 namespace Image.Import
 {
@@ -23,7 +24,7 @@ namespace Image.Import
 
             FileHandlers = new Dictionary<string, Func<FileInfo, bool>>(StringComparer.InvariantCultureIgnoreCase)
             {
-                { ".jpg", ImportPicture },
+                { ".jpg", ImportImage },
                 { ".mp4", ImportVideo },
             };
         }
@@ -115,33 +116,28 @@ namespace Image.Import
 
         private static Regex PatternReplacments { get; } = new Regex(@"\$\{(?<name>\w+)(:(?<format>[^}]+))?\}", RegexOptions.Compiled);
 
-        private bool ImportPicture(FileInfo file)
+        private bool ImportImage(FileInfo file)
         {
             var metadata = new Metadata(file);
-            var filename = Path.Combine(Profile.Target, PatternReplacments.Replace(Profile.PicturesExpression, m => ReplacePicturePatterns(m, file, metadata)));
+            var filename = PatternReplacments.Replace(Profile.ImageExpression, m => ReplaceImagePatterns(m, file, metadata));
             var directory = Path.GetDirectoryName(filename);
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
 
-            if (Profile.Overwrite || !File.Exists(filename))
+            if (checkBoxOverwrite.Checked || !File.Exists(filename))
             {
-                file.CopyTo(filename, Profile.Overwrite);
+                file.CopyTo(filename, checkBoxOverwrite.Checked);
                 return true;
             }
             return false;            
         }
 
-        private string ReplacePicturePatterns(Match match, FileInfo file, Metadata metadata)
+        private string ReplaceFilePatterns(Match match, FileInfo file)
         {
             var name = match.Groups["name"].Value;
 
             switch (name.ToLower())
             {
-                case "taken":
-                    {
-                        var format = match.Groups["format"].Value ?? "yyyy-MM-dd-HH-mm-ss";
-                        return metadata.DateTaken.ToString(format);
-                    }
                 case "filedate":
                     {
                         var format = match.Groups["format"].Value ?? "yyyy-MM-dd-HH-mm-ss";
@@ -158,13 +154,65 @@ namespace Image.Import
             }
         }
 
+
+        private string ReplaceImagePatterns(Match match, FileInfo file, Metadata metadata)
+        {
+            var name = match.Groups["name"].Value;
+
+            switch (name.ToLower())
+            {
+                case "taken":
+                    {
+                        var format = match.Groups["format"].Value ?? "yyyy-MM-dd-HH-mm-ss";
+                        return metadata.DateTaken.ToString(format);
+                    }
+                default:
+                    {
+                        return ReplaceFilePatterns(match, file);
+                    }
+            }
+        }
+
         private bool ImportVideo(FileInfo file)
         {
-            throw new NotImplementedException(file.FullName);
+            var filename = PatternReplacments.Replace(Profile.VideoExpression, m => ReplaceVideoPatterns(m, file));
+            var directory = Path.GetDirectoryName(filename);
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            if (checkBoxOverwrite.Checked || !File.Exists(filename))
+            {
+                file.CopyTo(filename, checkBoxOverwrite.Checked);
+                return true;
+            }
+            return false;
+        }
+
+        private string ReplaceVideoPatterns(Match match, FileInfo file)
+        {
+            return ReplaceFilePatterns(match, file);
         }
 
         private void TextBoxSourceTextChanged(object sender, EventArgs e)
         {
+            var state = ImportState.Load(textBoxSource.Text);
+            if (state != null)
+            {
+                checkBoxOverwrite.Checked = state.Overwrite;
+                var profile = ProfileContainer.Profiles.FirstOrDefault(p => p.Name == state.ProfileName);
+                if (profile != null)
+                    comboBoxProfiles.SelectedItem = profile;
+
+                checkBoxOnlyAfterLastImport.Enabled = true;
+                checkBoxOnlyAfterLastImport.Checked = state.OnlyAfterLastImport;
+                OnlyAfter = state.Timestamp;
+            }
+            else
+            {
+                checkBoxOnlyAfterLastImport.Enabled = false;
+                checkBoxOnlyAfterLastImport.Checked = false;
+            }
+
             StartScan();
         }
 
@@ -183,6 +231,7 @@ namespace Image.Import
                 textBoxSource.Enabled =
                 buttonEdit.Enabled =
                 comboBoxProfiles.Enabled =
+                checkBoxOverwrite.Enabled = 
                 buttonSelect.Enabled = false;
 
                 progressBar.Value = 0;
@@ -214,7 +263,9 @@ namespace Image.Import
             {
                 try
                 {
-                    if (FileHandlers[file.Extension](file))
+                    if (checkBoxOnlyAfterLastImport.Checked && file.LastWriteTime < OnlyAfter)
+                        Skipped++;
+                    else if (FileHandlers[file.Extension](file))
                         Copied++;
                     else
                         Skipped++;
@@ -222,7 +273,7 @@ namespace Image.Import
                 catch (Exception exception)
                 {
                     AddProtocol($"failed - {file.FullName}");
-                    AddProtocol($"       {exception.Message}");
+                    AddProtocol($"         {exception.Message}");
                     Failed++;
                 }
                 Invoke((MethodInvoker)delegate
@@ -240,12 +291,6 @@ namespace Image.Import
 
             Invoke((MethodInvoker)delegate 
             {
-                textBoxSource.Enabled =
-                buttonSelect.Enabled =
-                buttonEdit.Enabled =
-                comboBoxProfiles.Enabled =
-                buttonImport.Enabled = true;
-
                 progressBar.Visible = false;
 
                 buttonImport.Text = "&Import";
@@ -270,8 +315,28 @@ namespace Image.Import
                 }
                 else
                 {
+                    var state = new ImportState
+                    {
+                        Timestamp = DateTime.Now,
+                        Overwrite = checkBoxOverwrite.Checked,
+                        OnlyAfterLastImport = checkBoxOnlyAfterLastImport.Checked,
+                        ProfileName = Profile.Name
+                    };
+
+                    if (state.Save(textBoxSource.Text))
+                    {
+                        AddProtocol("state saved");
+                    }
+
                     AddProtocol($"import completed");
                 }
+
+                textBoxSource.Enabled =
+                buttonSelect.Enabled =
+                buttonEdit.Enabled =
+                comboBoxProfiles.Enabled =
+                checkBoxOverwrite.Enabled =
+                buttonImport.Enabled = true;
             });
         }
 
@@ -290,6 +355,7 @@ namespace Image.Import
             comboBoxProfiles.DisplayMember = "Name";
 
             textBoxSource.Text = Options.Source;
+            menuItemRegisterAutoplay.Checked = AutoPlayRegistration.IsRegistered(Registry.CurrentUser);
         }
 
         private void ButtonEditClick(object sender, EventArgs e)
@@ -306,10 +372,35 @@ namespace Image.Import
         }
 
         public Profile Profile { get; set; }
+        public DateTime OnlyAfter { get; set; } = DateTime.MinValue;
 
         private void comboBoxProfiles_SelectedValueChanged(object sender, EventArgs e)
         {
             Profile = (Profile)comboBoxProfiles.SelectedValue;
+        }
+
+        private void MenuItemQuitClick(object sender, EventArgs e)
+        {
+            TokenSource?.Cancel();
+            Close();
+        }
+
+        private void MenuItemRegisterAutoplayClick(object sender, EventArgs e)
+        {
+            try
+            {
+                if (menuItemRegisterAutoplay.Checked)
+                    AutoPlayRegistration.Unregister(Registry.CurrentUser);
+                else
+                    AutoPlayRegistration.Register(Registry.CurrentUser);
+
+                menuItemRegisterAutoplay.Checked = !menuItemRegisterAutoplay.Checked;
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(this, exception.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            
         }
     }
 }
