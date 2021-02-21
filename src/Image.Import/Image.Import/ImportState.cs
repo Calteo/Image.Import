@@ -15,7 +15,7 @@ namespace Image.Import
         public bool OnlyAfterLastImport { get; set; }
         public string ProfileName { get; set; }
 
-        private const string Filename = "Image.Import.State.xml";
+        private static string Filename => $"Image.Import.State.{Environment.UserDomainName}.{Environment.UserName}.xml";
 
         internal bool Save(string folder)
         {
