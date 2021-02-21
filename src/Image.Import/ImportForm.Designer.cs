@@ -216,7 +216,7 @@ namespace Image.Import
             this.checkBoxOnlyAfterLastImport.Name = "checkBoxOnlyAfterLastImport";
             this.checkBoxOnlyAfterLastImport.Size = new System.Drawing.Size(526, 28);
             this.checkBoxOnlyAfterLastImport.TabIndex = 11;
-            this.checkBoxOnlyAfterLastImport.Text = "Only files new than last import";
+            this.checkBoxOnlyAfterLastImport.Text = "Only files newer than last import";
             this.checkBoxOnlyAfterLastImport.UseVisualStyleBackColor = true;
             // 
             // folderBrowserDialog
