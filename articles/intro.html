@@ -69,7 +69,57 @@
             <article class="content wrap" id="_content" data-uid="">
 <h1 id="introduction">Introduction</h1>
 
-</article>
+<p>This simple program imports images and videos from a folder or drive into your system.
+Currently it will import images with the extension *.jpg and videos with the extension *.mp4.</p>
+<h2 id="autoplay-registration">Autoplay registration</h2>
+<p>In the menu File / Autoplay Registration you can register this program for autoplay.
+This way the programm will automatically show up as one of the options after inserting a sd card into your system with pictures on it.</p>
+<h2 id="source">Source</h2>
+<p>For a source you can select any drive or folder.
+The source can be set from the command line with the option -source <folder>.<p>
+<p>The autoplay registration will automatically set the source to the inserted drive.</p>
+<p>As soon as the source is set it is scanned for possible files to import.</p>
+<h2 id="profiles">Profiles</h2>
+<p>Beore importing there must be a selected profile. These can be edit via the Edit button.
+Each profile consists of a name and two expressions. One for images and one for videos.</p>
+<h3 id="images">Images</h3>
+<p>In the expression for images you specify where images will be saved.
+This muss be a complete filename and it can contain placeholders, which are replaced by values of the current image.</p>
+<p>These placeholder come in the syntax of ${name:format}. The format is optional.</p>
+<ul>
+<li>filename - the name of the imported file including its extension</li>
+<li>filedate - the timestamp of the last change of the imported file.
+Here the format consists of patterns that format a DateTime object.
+If no format is given then &quot;yyyy-MM-dd-HH-mm-ss&quot; is applied.</li>
+<li>taken - the timestamp when the image was taken
+Here the format consists of patterns that format a DateTime object.
+If no format is given then &quot;yyyy-MM-dd-HH-mm-ss&quot; is applied.</li>
+</ul>
+<p>Example: D:\Temp\ImageImport${taken:yyyy-MM}${filename}</p>
+<p>This puts all images from the same month into one folder.</p>
+<h3 id="videos">Videos</h3>
+<p>In the expression for videos you specify where videos will be saved.
+This muss be a complete filename and it can contain placeholders, which are replaced by values of the current video.</p>
+<p>These placeholder come in the syntax of ${name:format}. The format is optional.</p>
+<ul>
+<li>filename - the name of the imported file including its extension</li>
+<li>filedate - the timestamp of the last change of the imported file.
+Here the format consists of patterns that format a DateTime object.
+If no format is given then &quot;yyyy-MM-dd-HH-mm-ss&quot; is applied.</li>
+</ul>
+<p>Example: D:\Temp\VideoImport${taken:yyyy}${taken:yyyy}${filename}</p>
+<p>This puts all images from the same month into one folder wihich are out into a separate folder for every year.</p>
+<h2 id="options">Options</h2>
+<h3 id="overwrite-exsiting-files">Overwrite exsiting files</h3>
+<p>Obviously this overwrites already existing files in the target folder. Otherwise existing files will be skipped.</p>
+<h3 id="only-files-newer-than-last-import">Only files newer than last import</h3>
+<p>If imported files are deleted in the target folder they would be reimported on the next run of an import. This might not be a wanted behaviour.
+Therefore the program tries to save an import state on the source and if such a file is present then this option can be enabled.
+If enabled only files that are newer than the last import are imported (hence the name of the option).</p>
+<h1 id="import">Import</h1>
+<p>The import starts with the Import button and can be aborted while it is running.
+Some progress messages are shown.</p>
+</folder></article>
           </div>
           
           <div class="hidden-sm col-md-2" role="complementary">
