@@ -49,6 +49,10 @@ namespace Image.Import
             this.menuItemRegisterAutoplay = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.menuItemQuit = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItemHelp = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuItemCheckUpdates = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.menuItemVersion = new System.Windows.Forms.ToolStripMenuItem();
             this.tableLayoutPanel.SuspendLayout();
             this.menuStrip.SuspendLayout();
             this.SuspendLayout();
@@ -228,7 +232,8 @@ namespace Image.Import
             // menuStrip
             // 
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuItemFile});
+            this.menuItemFile,
+            this.menuItemHelp});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
             this.menuStrip.Size = new System.Drawing.Size(832, 24);
@@ -264,6 +269,35 @@ namespace Image.Import
             this.menuItemQuit.Size = new System.Drawing.Size(188, 22);
             this.menuItemQuit.Text = "&Quit";
             this.menuItemQuit.Click += new System.EventHandler(this.MenuItemQuitClick);
+            // 
+            // menuItemHelp
+            // 
+            this.menuItemHelp.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuItemCheckUpdates,
+            this.toolStripSeparator2,
+            this.menuItemVersion});
+            this.menuItemHelp.Name = "menuItemHelp";
+            this.menuItemHelp.Size = new System.Drawing.Size(44, 20);
+            this.menuItemHelp.Text = "Help";
+            // 
+            // menuItemCheckUpdates
+            // 
+            this.menuItemCheckUpdates.Name = "menuItemCheckUpdates";
+            this.menuItemCheckUpdates.Size = new System.Drawing.Size(152, 22);
+            this.menuItemCheckUpdates.Text = "Check updates";
+            this.menuItemCheckUpdates.Click += new System.EventHandler(this.MenuItemCheckUpdatesClick);
+            // 
+            // toolStripSeparator2
+            // 
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(149, 6);
+            // 
+            // menuItemVersion
+            // 
+            this.menuItemVersion.Name = "menuItemVersion";
+            this.menuItemVersion.Size = new System.Drawing.Size(152, 22);
+            this.menuItemVersion.Text = "Version";
+            this.menuItemVersion.Click += new System.EventHandler(this.MenuItemVersionClick);
             // 
             // ImportForm
             // 
@@ -308,6 +342,10 @@ namespace Image.Import
         private System.Windows.Forms.ToolStripMenuItem menuItemQuit;
         private System.Windows.Forms.ToolStripMenuItem menuItemRegisterAutoplay;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStripMenuItem menuItemCheckUpdates;
+        private System.Windows.Forms.ToolStripMenuItem menuItemHelp;
+        private System.Windows.Forms.ToolStripMenuItem menuItemVersion;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
     }
 }
 

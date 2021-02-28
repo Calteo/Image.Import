@@ -5,12 +5,13 @@ using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Toolbox;
-using Toolbox.Xml.Serialization;
+using Toolbox.Update;
 
 namespace Image.Import
 {
@@ -27,6 +28,8 @@ namespace Image.Import
                 { ".jpg", ImportImage },
                 { ".mp4", ImportVideo },
             };
+
+            Text += $" - {Assembly.GetExecutingAssembly().GetName().Version}";
         }
 
         public ImportOptions Options { get; set; }
@@ -373,6 +376,7 @@ namespace Image.Import
 
         public Profile Profile { get; set; }
         public DateTime OnlyAfter { get; set; } = DateTime.MinValue;
+        public object Asssembly { get; private set; }
 
         private void comboBoxProfiles_SelectedValueChanged(object sender, EventArgs e)
         {
@@ -399,8 +403,46 @@ namespace Image.Import
             catch (Exception exception)
             {
                 MessageBox.Show(this, exception.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }            
+        }
+
+        private void MenuItemCheckUpdatesClick(object sender, EventArgs e)
+        {
+            try
+            {
+                UseWaitCursor = true;
+
+                var updater = new GitHubUpdater("Calteo", "Image.Import");
+                var latest = updater.GetLatestVersion();
+
+                var version = new Version(latest.Version);
+                if (version > Assembly.GetExecutingAssembly().GetName().Version)
+                {
+                    var rc = MessageBox.Show(this, $"Latest version {latest.Name}\nPublished {latest.Published}\n\nInstall this version?", "Updates", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    if (rc == DialogResult.Yes)
+                    {
+                        updater.Install(latest);
+                        Close();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show(this, $"This is the newest version.", "Updates", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }                
             }
-            
+            catch (Exception execption)
+            {
+                MessageBox.Show(this, execption.Message, "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                UseWaitCursor = false;
+            }
+        }
+
+        private void MenuItemVersionClick(object sender, EventArgs e)
+        {
+            MessageBox.Show(this, $"Current version {Assembly.GetExecutingAssembly().GetName().Version}", "Installed", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }
