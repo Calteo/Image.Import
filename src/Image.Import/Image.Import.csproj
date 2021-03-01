@@ -10,12 +10,17 @@
     <AssemblyVersion>1.0.1.1</AssemblyVersion>
     <FileVersion>1.0.1.1</FileVersion>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Company>Calteo</Company>
+    <Product>Image.Import</Product>
+    <Authors>Calteo</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Calteo/Image.Import</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Toolbox.CommandLine" Version="1.0.31" />
     <PackageReference Include="Toolbox.Core" Version="0.2.6" />
-    <PackageReference Include="Toolbox.Update" Version="1.0.3" />
+    <PackageReference Include="Toolbox.Update" Version="1.0.11" />
     <PackageReference Include="Toolbox.Xml.Serialization" Version="1.0.63" />
   </ItemGroup>
 

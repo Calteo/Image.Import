@@ -415,7 +415,7 @@ namespace Image.Import
                 var updater = new GitHubUpdater("Calteo", "Image.Import");
                 var latest = updater.GetLatestVersion();
 
-                var version = new Version(latest.Version);
+                var version = new Version(latest.Version.Replace("v", ""));
                 if (version > Assembly.GetExecutingAssembly().GetName().Version)
                 {
                     var rc = MessageBox.Show(this, $"Latest version {latest.Name}\nPublished {latest.Published}\n\nInstall this version?", "Updates", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
