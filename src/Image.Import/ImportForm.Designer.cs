@@ -86,7 +86,7 @@ namespace Image.Import
             this.tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 34F));
             this.tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 34F));
             this.tableLayoutPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel.Size = new System.Drawing.Size(832, 463);
+            this.tableLayoutPanel.Size = new System.Drawing.Size(837, 545);
             this.tableLayoutPanel.TabIndex = 0;
             // 
             // labelSource
@@ -104,14 +104,14 @@ namespace Image.Import
             this.textBoxSource.Dock = System.Windows.Forms.DockStyle.Fill;
             this.textBoxSource.Location = new System.Drawing.Point(153, 3);
             this.textBoxSource.Name = "textBoxSource";
-            this.textBoxSource.Size = new System.Drawing.Size(526, 27);
+            this.textBoxSource.Size = new System.Drawing.Size(531, 27);
             this.textBoxSource.TabIndex = 1;
             this.textBoxSource.TextChanged += new System.EventHandler(this.TextBoxSourceTextChanged);
             // 
             // buttonSelect
             // 
             this.buttonSelect.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.buttonSelect.Location = new System.Drawing.Point(685, 3);
+            this.buttonSelect.Location = new System.Drawing.Point(690, 3);
             this.buttonSelect.Name = "buttonSelect";
             this.buttonSelect.Size = new System.Drawing.Size(144, 28);
             this.buttonSelect.TabIndex = 2;
@@ -124,7 +124,7 @@ namespace Image.Import
             this.labelFiles.Dock = System.Windows.Forms.DockStyle.Fill;
             this.labelFiles.Location = new System.Drawing.Point(153, 34);
             this.labelFiles.Name = "labelFiles";
-            this.labelFiles.Size = new System.Drawing.Size(526, 34);
+            this.labelFiles.Size = new System.Drawing.Size(531, 34);
             this.labelFiles.TabIndex = 3;
             this.labelFiles.Text = "Found 0 files.";
             this.labelFiles.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -133,7 +133,7 @@ namespace Image.Import
             // 
             this.buttonImport.Dock = System.Windows.Forms.DockStyle.Fill;
             this.buttonImport.Enabled = false;
-            this.buttonImport.Location = new System.Drawing.Point(685, 37);
+            this.buttonImport.Location = new System.Drawing.Point(690, 37);
             this.buttonImport.Name = "buttonImport";
             this.buttonImport.Size = new System.Drawing.Size(144, 28);
             this.buttonImport.TabIndex = 4;
@@ -153,7 +153,7 @@ namespace Image.Import
             this.textBoxProtocol.Name = "textBoxProtocol";
             this.textBoxProtocol.ReadOnly = true;
             this.textBoxProtocol.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.textBoxProtocol.Size = new System.Drawing.Size(826, 253);
+            this.textBoxProtocol.Size = new System.Drawing.Size(831, 335);
             this.textBoxProtocol.TabIndex = 5;
             this.textBoxProtocol.WordWrap = false;
             // 
@@ -164,7 +164,7 @@ namespace Image.Import
             this.progressBar.Dock = System.Windows.Forms.DockStyle.Fill;
             this.progressBar.Location = new System.Drawing.Point(3, 173);
             this.progressBar.Name = "progressBar";
-            this.progressBar.Size = new System.Drawing.Size(826, 28);
+            this.progressBar.Size = new System.Drawing.Size(831, 28);
             this.progressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.progressBar.TabIndex = 6;
             this.progressBar.Visible = false;
@@ -186,15 +186,15 @@ namespace Image.Import
             this.comboBoxProfiles.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxProfiles.Location = new System.Drawing.Point(153, 71);
             this.comboBoxProfiles.Name = "comboBoxProfiles";
-            this.comboBoxProfiles.Size = new System.Drawing.Size(526, 28);
+            this.comboBoxProfiles.Size = new System.Drawing.Size(531, 28);
             this.comboBoxProfiles.Sorted = true;
             this.comboBoxProfiles.TabIndex = 8;
-            this.comboBoxProfiles.SelectedValueChanged += new System.EventHandler(this.comboBoxProfiles_SelectedValueChanged);
+            this.comboBoxProfiles.SelectedValueChanged += new System.EventHandler(this.ComboBoxProfilesSelectedValueChanged);
             // 
             // buttonEdit
             // 
             this.buttonEdit.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.buttonEdit.Location = new System.Drawing.Point(685, 71);
+            this.buttonEdit.Location = new System.Drawing.Point(690, 71);
             this.buttonEdit.Name = "buttonEdit";
             this.buttonEdit.Size = new System.Drawing.Size(144, 28);
             this.buttonEdit.TabIndex = 9;
@@ -207,7 +207,7 @@ namespace Image.Import
             this.checkBoxOverwrite.Dock = System.Windows.Forms.DockStyle.Fill;
             this.checkBoxOverwrite.Location = new System.Drawing.Point(153, 105);
             this.checkBoxOverwrite.Name = "checkBoxOverwrite";
-            this.checkBoxOverwrite.Size = new System.Drawing.Size(526, 28);
+            this.checkBoxOverwrite.Size = new System.Drawing.Size(531, 28);
             this.checkBoxOverwrite.TabIndex = 10;
             this.checkBoxOverwrite.Text = "Overwrite existing files";
             this.checkBoxOverwrite.UseVisualStyleBackColor = true;
@@ -218,7 +218,7 @@ namespace Image.Import
             this.checkBoxOnlyAfterLastImport.Enabled = false;
             this.checkBoxOnlyAfterLastImport.Location = new System.Drawing.Point(153, 139);
             this.checkBoxOnlyAfterLastImport.Name = "checkBoxOnlyAfterLastImport";
-            this.checkBoxOnlyAfterLastImport.Size = new System.Drawing.Size(526, 28);
+            this.checkBoxOnlyAfterLastImport.Size = new System.Drawing.Size(531, 28);
             this.checkBoxOnlyAfterLastImport.TabIndex = 11;
             this.checkBoxOnlyAfterLastImport.Text = "Only files newer than last import";
             this.checkBoxOnlyAfterLastImport.UseVisualStyleBackColor = true;
@@ -236,7 +236,7 @@ namespace Image.Import
             this.menuItemHelp});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
-            this.menuStrip.Size = new System.Drawing.Size(832, 24);
+            this.menuStrip.Size = new System.Drawing.Size(837, 24);
             this.menuStrip.TabIndex = 1;
             this.menuStrip.Text = "menuStrip1";
             // 
@@ -303,7 +303,7 @@ namespace Image.Import
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(832, 487);
+            this.ClientSize = new System.Drawing.Size(837, 569);
             this.Controls.Add(this.tableLayoutPanel);
             this.Controls.Add(this.menuStrip);
             this.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);

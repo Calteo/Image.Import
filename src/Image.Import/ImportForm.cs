@@ -1,14 +1,11 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Toolbox;
 using Toolbox.Update;
@@ -21,42 +18,31 @@ namespace Image.Import
         {
             InitializeComponent();
 
-            Files.ListChanged += FilesListChanged;
+            FileHandlers = new Dictionary<string, Func<FileInfo, bool>>(StringComparer.InvariantCultureIgnoreCase);
 
-            FileHandlers = new Dictionary<string, Func<FileInfo, bool>>(StringComparer.InvariantCultureIgnoreCase)
-            {
-                { ".jpg", ImportImage },
-                { ".mp4", ImportVideo },
-            };
+            Scanner = new BackgroundWorker<DirectoryInfo, List<FileInfo>>(this, InitScan, DoScan, CompleteScan);
+            Importer = new BackgroundWorker<Profile, ImportStats>(this, InitImport, DoImport, CompletedImport);
 
             Text += $" - {Assembly.GetExecutingAssembly().GetName().Version}";
         }
 
         public ImportOptions Options { get; set; }
 
-        private void FilesListChanged(object sender, ListChangedEventArgs e)
-        {
-            Invoke((MethodInvoker)delegate { labelFiles.Text = $"Found {Files.Count:#,##0} files."; });
-        }
+        public List<FileInfo> Files { get; set; }
+        public Dictionary<string, Func<FileInfo, bool>> FileHandlers { get; }
 
-        public BindingList<FileInfo> Files { get; } = new BindingList<FileInfo>();
-        public Dictionary<string, Func<FileInfo, bool>> FileHandlers { get; } 
-        
-        
         private void ButtonSelectClick(object sender, EventArgs e)
         {
             folderBrowserDialog.SelectedPath = textBoxSource.Text;
             if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
             {
-                textBoxSource.Text = folderBrowserDialog.SelectedPath;                
+                textBoxSource.Text = folderBrowserDialog.SelectedPath;
             }
         }
 
-        public CancellationTokenSource TokenSource { get; set; }
-
         public void AddProtocol(string text)
         {
-            Invoke((MethodInvoker)delegate 
+            Invoke((MethodInvoker)delegate
             {
                 textBoxProtocol.Text += text + Environment.NewLine;
                 textBoxProtocol.SelectionLength = 0;
@@ -65,64 +51,199 @@ namespace Image.Import
             });
         }
 
+        private BackgroundWorker<DirectoryInfo, List<FileInfo>> Scanner { get; }            
+
         public void StartScan()
         {
-            TokenSource?.Cancel();
+            Scanner.Start();
+        }
 
-            TokenSource = new CancellationTokenSource();
+        private DirectoryInfo InitScan()
+        {
+            var folder = textBoxSource.Text;
+            if (folder == "")
+            {
+                labelFiles.Text = "No folder";
+                return null;
+            }
+            var directory = new DirectoryInfo(folder);
 
-            Files.Clear();
+            if (!directory.Exists)
+            {
+                labelFiles.Text = "Folder does not exist.";
+                return null;
+            }
 
             buttonImport.Enabled = false;
             progressBar.Style = ProgressBarStyle.Marquee;
             progressBar.Visible = true;
 
-            Task.Run(() => Scan(textBoxSource.Text), TokenSource.Token)
-                .ContinueWith(CompleteScan);
-        }
-       
-        private void Scan(string folder)
-        {
-            if (folder == "") return;
-            var directory = new DirectoryInfo(folder);
+            labelFiles.Text = "Scanning...";
 
-            if (!directory.Exists) return;
+            return directory;
+        }
+
+        private List<FileInfo> DoScan(DirectoryInfo directory)
+        {
+            if (directory == null) return null;
+
+            var files = new List<FileInfo>();
 
             foreach (var file in directory.EnumerateFiles("*.*", SearchOption.AllDirectories))
-            {                
+            {
+                if (Scanner.CancellationPending) return null;
+
                 if (FileHandlers.ContainsKey(file.Extension))
-                    Files.Add(file);
-                if (TokenSource.Token.IsCancellationRequested) break;
+                    files.Add(file);
             }
+
+            return files;
         }
 
-        private void CompleteScan(Task task)
+        private void CompleteScan(List<FileInfo> files, bool canceled, Exception exception)
         {
-            TokenSource = null;
-            Invoke((MethodInvoker)delegate 
-            { 
-                progressBar.Visible = false;
-            });
+            progressBar.Visible = false;
 
-            if (task.IsCompleted)
+            if (exception != null)
             {
+                labelFiles.Text = $"Exception: {exception.Message}";
+            }
+            else if (canceled)
+            {
+                labelFiles.Text = "Scan aborted.";
+            }
+            else if (files == null)
+            {
+                labelFiles.Text = "No files found.";
+            }
+            else
+            {
+                Files = files;                
+
                 var groups = Files.GroupBy(f => f.Extension.ToLower()).Select(g => $"{g.Count():#,###} {g.Key.Substring(1)}-files");
                 var text = $"Found {string.Join(", ", groups)}.";
-                Invoke((MethodInvoker)delegate { labelFiles.Text = text; });
-
+                labelFiles.Text = text;
                 if (Files.Count > 0)
                 {
-                    Invoke((MethodInvoker)delegate { buttonImport.Enabled = true; });
+                    buttonImport.Enabled = true;
                 }
             }
         }
 
+        public BackgroundWorker<Profile, ImportStats> Importer { get; }
+
+        private Profile InitImport()
+        {
+            textBoxSource.Enabled =
+            buttonEdit.Enabled =
+            comboBoxProfiles.Enabled =
+            checkBoxOverwrite.Enabled =
+            buttonSelect.Enabled = false;
+
+            progressBar.Value = 0;
+            progressBar.Maximum = Files.Count;
+            progressBar.Style = ProgressBarStyle.Blocks;
+            progressBar.Visible = true;
+
+            buttonImport.Text = "&Abort";
+
+            textBoxProtocol.Text = "";
+            AddProtocol($"import from {textBoxSource.Text}");
+            
+            return Profile;
+        }
+
+        private ImportStats DoImport(Profile profile)
+        {
+            var stats = new ImportStats();
+
+            AddProtocol($"profile {profile.Name}");
+
+            foreach (var file in Files)
+            {
+                try
+                {
+                    if (Importer.CancellationPending) return stats;
+
+                    if (checkBoxOnlyAfterLastImport.Checked && file.LastWriteTime < OnlyAfter)
+                        stats.Skipped++;
+                    else if (FileHandlers[file.Extension](file))
+                        stats.Copied++;
+                    else
+                        stats.Skipped++;
+                }
+                catch (Exception exception)
+                {
+                    AddProtocol($"failed - {file.FullName}");
+                    AddProtocol($"         {exception.Message}");
+                    stats.Failed++;
+                }
+                Invoke((MethodInvoker)delegate
+                {
+                    progressBar.Value++;
+                });
+            }
+
+            return stats;
+        }
+
+        private void CompletedImport(ImportStats stats, bool canceled, Exception exception)
+        {
+            progressBar.Visible = false;
+
+            buttonImport.Text = "&Import";
+            
+            if (stats != null)
+            {
+                var results = new List<string>();
+
+                if (stats.Copied > 0)
+                    results.Add($"{stats.Copied:#,##0} copied");
+                if (stats.Skipped > 0)
+                    results.Add($"{stats.Skipped:#,##0} skipped");
+                if (stats.Failed > 0)
+                    results.Add($"{stats.Failed:#,##0} failed");
+                var result = string.Join(", ", results);
+                if (result.NotEmpty())
+                    AddProtocol($"result - {result}");
+            }
+
+            if (canceled)
+                AddProtocol("import aborted.");
+            else if (exception != null)
+            {
+                AddProtocol($"import failed - {exception.Message}");
+            }
+            else
+            {
+                var state = new ImportState
+                {
+                    Timestamp = DateTime.Now,
+                    Overwrite = checkBoxOverwrite.Checked,
+                    OnlyAfterLastImport = checkBoxOnlyAfterLastImport.Checked,
+                    ProfileName = Profile.Name
+                };
+
+                if (state.Save(textBoxSource.Text))
+                {
+                    AddProtocol("state saved");
+                }
+
+                AddProtocol($"import completed");
+            }
+
+            textBoxSource.Enabled =
+            buttonSelect.Enabled =
+            buttonEdit.Enabled =
+            comboBoxProfiles.Enabled =
+            checkBoxOverwrite.Enabled =
+            buttonImport.Enabled = true;
+        }
+
         private static Regex PatternReplacments { get; } = new Regex(@"\$\{(?<name>\w+)(:(?<format>[^}]+))?\}", RegexOptions.Compiled);
 
-        private bool ImportImage(FileInfo file)
+        private bool ImportFile(FileInfo file, string filename)
         {
-            var metadata = new Metadata(file);
-            var filename = PatternReplacments.Replace(Profile.ImageExpression, m => ReplaceImagePatterns(m, file, metadata));
             var directory = Path.GetDirectoryName(filename);
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
@@ -132,7 +253,14 @@ namespace Image.Import
                 file.CopyTo(filename, checkBoxOverwrite.Checked);
                 return true;
             }
-            return false;            
+            return false;
+        }
+
+        private bool ImportImage(FileInfo file)
+        {
+            var metadata = new Metadata(file);
+            var filename = PatternReplacments.Replace(Profile.ImageExpression, m => ReplaceImagePatterns(m, file, metadata));
+            return ImportFile(file, filename);
         }
 
         private string ReplaceFilePatterns(Match match, FileInfo file)
@@ -157,7 +285,6 @@ namespace Image.Import
             }
         }
 
-
         private string ReplaceImagePatterns(Match match, FileInfo file, Metadata metadata)
         {
             var name = match.Groups["name"].Value;
@@ -176,25 +303,18 @@ namespace Image.Import
             }
         }
 
+        private bool ImportRaw(FileInfo file)
+        {
+            var filename = PatternReplacments.Replace(Profile.RawExpression, m => ReplaceFilePatterns(m, file));
+            return ImportFile(file, filename);
+        }
+
         private bool ImportVideo(FileInfo file)
         {
-            var filename = PatternReplacments.Replace(Profile.VideoExpression, m => ReplaceVideoPatterns(m, file));
-            var directory = Path.GetDirectoryName(filename);
-            if (!Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            if (checkBoxOverwrite.Checked || !File.Exists(filename))
-            {
-                file.CopyTo(filename, checkBoxOverwrite.Checked);
-                return true;
-            }
-            return false;
+            var filename = PatternReplacments.Replace(Profile.VideoExpression, m => ReplaceFilePatterns(m, file));
+            return ImportFile(file, filename);
         }
 
-        private string ReplaceVideoPatterns(Match match, FileInfo file)
-        {
-            return ReplaceFilePatterns(match, file);
-        }
 
         private void TextBoxSourceTextChanged(object sender, EventArgs e)
         {
@@ -221,131 +341,29 @@ namespace Image.Import
 
         private void ButtonImportClick(object sender, EventArgs e)
         {
-            if (TokenSource != null)
+            if (Importer.Running)
             {
                 buttonImport.Text = "Aborting...";
                 buttonImport.Enabled = false;
-                TokenSource.Cancel();
+                Importer.Cancel();
             }
             else
             {
-                TokenSource = new CancellationTokenSource();
-
-                textBoxSource.Enabled =
-                buttonEdit.Enabled =
-                comboBoxProfiles.Enabled =
-                checkBoxOverwrite.Enabled = 
-                buttonSelect.Enabled = false;
-
-                progressBar.Value = 0;
-                progressBar.Maximum = Files.Count;
-                progressBar.Style = ProgressBarStyle.Blocks;
-                progressBar.Visible = true;
-
-                buttonImport.Text = "&Abort";
-
-                textBoxProtocol.Text = "";
-                AddProtocol($"import from {textBoxSource.Text}");
-
-                Task.Run(() => Import(), TokenSource.Token)
-                    .ContinueWith(CompleteImport);
+                Importer.Start();
             }
         }
 
-        public int Copied { get; private set; }
-        public int Skipped { get; private set; }
-        public int Failed { get; private set; }
-
-        private void Import()
+        private void RegisterFileHandlers(string extensions, Func<FileInfo, bool> handler)
         {
-            AddProtocol($"profile {Profile.Name}");
-
-            Copied = Skipped = Failed = 0;
-
-            foreach (var file in Files)
+            var parts = extensions.Split(" .,;".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+            foreach (var part in parts)
             {
-                try
-                {
-                    if (checkBoxOnlyAfterLastImport.Checked && file.LastWriteTime < OnlyAfter)
-                        Skipped++;
-                    else if (FileHandlers[file.Extension](file))
-                        Copied++;
-                    else
-                        Skipped++;
-                }
-                catch (Exception exception)
-                {
-                    AddProtocol($"failed - {file.FullName}");
-                    AddProtocol($"         {exception.Message}");
-                    Failed++;
-                }
-                Invoke((MethodInvoker)delegate
-                {
-                    progressBar.Value++;
-                });
-
-                TokenSource.Token.ThrowIfCancellationRequested();
+                FileHandlers[$".{part}"] = handler;
             }
-        }
-
-        private void CompleteImport(Task task)
-        {
-            TokenSource = null;
-
-            Invoke((MethodInvoker)delegate 
-            {
-                progressBar.Visible = false;
-
-                buttonImport.Text = "&Import";
-
-                var results = new List<string>();
-                if (Copied > 0)
-                    results.Add($"{Copied:#,##0} copied");
-                if (Skipped > 0)
-                    results.Add($"{Skipped:#,##0} skipped");
-                if (Failed > 0)
-                    results.Add($"{Failed:#,##0} failed");
-
-                var result = string.Join(", ", results);
-                if (result.NotEmpty())
-                    AddProtocol($"result - {result}");
-
-                if (task.IsCanceled)
-                    AddProtocol("import aborted.");
-                else if (task.IsFaulted)
-                {
-                    AddProtocol($"import failed - {task.Exception?.Message}");
-                }
-                else
-                {
-                    var state = new ImportState
-                    {
-                        Timestamp = DateTime.Now,
-                        Overwrite = checkBoxOverwrite.Checked,
-                        OnlyAfterLastImport = checkBoxOnlyAfterLastImport.Checked,
-                        ProfileName = Profile.Name
-                    };
-
-                    if (state.Save(textBoxSource.Text))
-                    {
-                        AddProtocol("state saved");
-                    }
-
-                    AddProtocol($"import completed");
-                }
-
-                textBoxSource.Enabled =
-                buttonSelect.Enabled =
-                buttonEdit.Enabled =
-                comboBoxProfiles.Enabled =
-                checkBoxOverwrite.Enabled =
-                buttonImport.Enabled = true;
-            });
         }
 
         private void ImportFormFormClosing(object sender, FormClosingEventArgs e)
         {
-            TokenSource?.Cancel();
         }
 
         public ProfileContainer ProfileContainer { get; set; }
@@ -353,7 +371,7 @@ namespace Image.Import
         private void ImportFormLoad(object sender, EventArgs e)
         {
             ProfileContainer = ProfileContainer.Get();
-            
+
             comboBoxProfiles.DataSource = ProfileContainer.Profiles;
             comboBoxProfiles.DisplayMember = "Name";
 
@@ -374,18 +392,39 @@ namespace Image.Import
             }
         }
 
-        public Profile Profile { get; set; }
+        #region
+        private Profile profile;
+        public Profile Profile 
+        { 
+            get => profile;
+            set
+            {
+                profile = value;
+
+                FileHandlers.Clear();
+
+                if (profile != null)
+                {
+                    RegisterFileHandlers(Profile.ImageExtensions ?? "", ImportImage);
+                    RegisterFileHandlers(Profile.RawExtensions ?? "", ImportRaw);
+                    RegisterFileHandlers(Profile.VideoExtensions ?? "", ImportVideo);                   
+                }
+                StartScan();
+            }
+        }
+        #endregion
+
         public DateTime OnlyAfter { get; set; } = DateTime.MinValue;
+
         public object Asssembly { get; private set; }
 
-        private void comboBoxProfiles_SelectedValueChanged(object sender, EventArgs e)
+        private void ComboBoxProfilesSelectedValueChanged(object sender, EventArgs e)
         {
             Profile = (Profile)comboBoxProfiles.SelectedValue;
         }
 
         private void MenuItemQuitClick(object sender, EventArgs e)
         {
-            TokenSource?.Cancel();
             Close();
         }
 
@@ -403,7 +442,7 @@ namespace Image.Import
             catch (Exception exception)
             {
                 MessageBox.Show(this, exception.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }            
+            }
         }
 
         private void MenuItemCheckUpdatesClick(object sender, EventArgs e)
@@ -428,7 +467,7 @@ namespace Image.Import
                 else
                 {
                     MessageBox.Show(this, $"This is the newest version.", "Updates", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }                
+                }
             }
             catch (Exception execption)
             {
